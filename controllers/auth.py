@@ -35,3 +35,7 @@ def register():
     return ResponseDto(status=0, msg=response['msg'], result=response['data']).to_json()
 
 
+@auth_blueprint.route('/logout/', methods=["GET"])
+def logout():
+    AuthService.logout()
+    return ResponseDto(status=0, msg='Logout Successful').to_json()
