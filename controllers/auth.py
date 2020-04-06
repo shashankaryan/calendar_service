@@ -19,3 +19,19 @@ def login():
     return ResponseDto(status=0, msg=response['msg'], result=response['data']).to_json()
 
 
+@auth_blueprint.route('/register/', methods=["POST"])
+def register():
+    email = request.form.get('email', '')
+    name = request.form.get('name', '')
+    password = request.form.get('password', '')
+    confirm = request.form.get('confirmPassword', '')
+    if not email.strip() or not password.strip() or not name.strip() or not confirm.strip() or password != confirm\
+            or not AuthService.validate_email(email):
+        return ResponseDto(status=-1, msg='Data Incomplete/Invalid or Password Mismatch').to_json()
+
+    response = AuthService.create_user(email=email, name=name, password=password)
+    if not response['value']:
+        return ResponseDto(status=-1, msg=response['error']).to_json()
+    return ResponseDto(status=0, msg=response['msg'], result=response['data']).to_json()
+
+
