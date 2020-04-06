@@ -1,4 +1,5 @@
 from bson import ObjectId
+from flask_login import current_user
 
 from models.calendar import Slot
 from datetime import datetime, timedelta

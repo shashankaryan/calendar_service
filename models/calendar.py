@@ -23,7 +23,8 @@ class Slot(BaseDocument):
     booked_by = ReferenceField(User)
 
     def to_dict(self):
-        return {"id": str(self.id), "user": self.user.to_dict(), 'bookedBy': self.booked_by.to_dict(),
+        return {"id": str(self.id), "user": self.user.to_dict(),
+                'bookedBy': self.booked_by.to_dict() if self.booked_by else None,
                 "startTimestamp": self.start_ts.timestamp(), "endTimestamp": self.end_ts.timestamp()}
 
     def update(self, slot_data):
