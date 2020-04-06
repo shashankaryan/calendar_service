@@ -11,6 +11,7 @@ calendar_blueprint = Blueprint('calendar_blueprint', __name__)
 
 
 @calendar_blueprint.route('/slot/', methods=['GET'])
+@login_required
 def get_slot():
     page, per_page, offset = get_page_items()
     paginate = request.args.get('paginate', 'true').lower()
@@ -41,6 +42,31 @@ def get_slot():
     if slots.get('data'):
         return ResponseDto(status=0, result=slots).to_json()
     return ResponseDto(status=-1, msg='No Slot Found.').to_json()
+
+
+@calendar_blueprint.route('/slot/', methods=['POST'])
+@login_required
+def create_slot():
+    slot_data = request.json.get('slotData')
+    if not slot_data:
+        return ResponseDto(status=-1, msg="Slot Data missing").to_json()
+
+    necessary_fields = ["userEmail", "startTimestamp", "endTimestamp"]
+    error, msg = False, ''
+    for field in necessary_fields:
+        if field not in slot_data:
+            error = True
+            msg = field + " not provided"
+    if error:
+        return ResponseDto(status=-1, msg=msg).to_json()
+    validated = CalendarService.check_data_validations(slot_data)
+    if not validated['value']:
+        return ResponseDto(status=-1, msg=validated['error']).to_json()
+
+    response = CalendarService.create_slot(slot_data)
+    if response:
+        return ResponseDto(status=0, msg='Create operation successful', result=response).to_json()
+    return ResponseDto(status=-1, msg='Slot create operation failed').to_json()
 
 
 
