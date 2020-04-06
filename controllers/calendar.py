@@ -69,8 +69,56 @@ def create_slot():
     return ResponseDto(status=-1, msg='Slot create operation failed').to_json()
 
 
+@calendar_blueprint.route('/slot/', methods=['PATCH'])
+@login_required
+def update_slot():
+    slot_data = request.json.get('slotData', {})
+    if not slot_data:
+        return ResponseDto(status=-1, msg="Slot Data missing").to_json()
+    if not slot_data.get("id", None):
+        return ResponseDto(status=-1, msg='No ID provided.').to_json()
+
+    slot_resp = CalendarService.validate_slot_id_and_get_instance(slot_data.get("id"))
+
+    if slot_resp["err"] is not None:
+        return ResponseDto(status=-1, msg=slot_resp["err"]).to_json()
+
+    possible_fields = ["startTimestamp", "endTimestamp", "bookedBy"]
+    if not set(possible_fields).intersection(set(slot_data.keys())):
+        return ResponseDto(status=0, msg="Nothing to update.").to_json()
+
+    validated = CalendarService.check_data_validations(slot_data, exempted_slot=[slot_resp['instance']])
+
+    if not validated['value']:
+        return ResponseDto(status=-1, msg=validated['error']).to_json()
+
+    response = slot_resp["instance"].update(slot_data)
+    if response['status']:
+        return ResponseDto(status=0, msg='Update operation successful', result={"data": response['data']}).to_json()
+    return ResponseDto(status=-1, msg='Update operation failed').to_json()
 
 
-@calendar_blueprint.route('/healthCheck', methods=['GET'])
+@calendar_blueprint.route('/slot/', methods=['DELETE'])
+@login_required
+def delete_slot():
+    slot_id = request.json.get('slotId', None)
+    if not slot_id:
+        return ResponseDto(status=-1, msg='No ID provided.').to_json()
+
+    slot_resp = CalendarService.validate_slot_id_and_get_instance(slot_id)
+    if slot_resp["err"] is not None:
+        return ResponseDto(status=-1, msg=slot_resp["err"]).to_json()
+
+    validated = CalendarService.validate_remove_slot(slot_resp["instance"])
+
+    if not validated['value']:
+        return ResponseDto(status=-1, msg=validated['error']).to_json()
+    response = CalendarService.remove_slot(slot_resp["instance"])
+    if response['status']:
+        return ResponseDto(status=0, msg='Remove successful').to_json()
+    return ResponseDto(status=-1, msg='Remove failed').to_json()
+
+
+@calendar_blueprint.route('/healthCheck/', methods=['GET'])
 def health_check():
     return ResponseDto(status=0, msg='All good').to_json(), 200
