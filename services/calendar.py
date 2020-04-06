@@ -73,8 +73,8 @@ class CalendarService:
     def create_slot(slot_data):
         """Creates new slot using user, start time and end time."""
         user = UserService.get_users(emails=[slot_data.get('userEmail')], data_objects=True, paginate=False).first()
-        slot = Slot(user=user, start_ts=datetime.fromtimestamp(slot_data.get('startTimestamp')),
-                    end_ts=datetime.fromtimestamp(slot_data.get('endTimestamp'))).save()
+        slot = Slot(user=user, start_ts=datetime.fromtimestamp(int(slot_data.get('startTimestamp'))),
+                    end_ts=datetime.fromtimestamp(int(slot_data.get('endTimestamp')))).save()
         return {"data": slot.to_dict()}
 
     @staticmethod
@@ -82,6 +82,23 @@ class CalendarService:
         user = UserService.get_users(emails=[value], data_objects=True, paginate=False).first()
         if not user:
             return "User with this email not found"
+        elif user.email != current_user.email:
+            return "User cannot define slot for another users."
+        return None
+
+    @staticmethod
+    def validate_booked_by(value, exempted_slot):
+        user = UserService.get_users(emails=[value], data_objects=True, paginate=False).first()
+        if not user:
+            return "User with this email not found"
+        elif user.email != current_user.email:
+            return "User cannot book slot for another users."
+        elif user.email == exempted_slot[0].user.email:
+            return "User cannot book their own slots"
+        elif Slot.objects.filter(booked_by=user, deleted=False,
+                                 start_ts__lt=exempted_slot[0].end_ts,
+                                 end_ts__gt=exempted_slot[0].start_ts):
+            return "Conflicting slots found for booking. You already have a slot to attend withing this timing."
         return None
 
     @staticmethod
@@ -94,8 +111,8 @@ class CalendarService:
         :return:
         """
         existing_slots = Slot.objects.filter(user=user, deleted=False,
-                                             start_date__lt=datetime.fromtimestamp(end_date),
-                                             end_date__gt=datetime.fromtimestamp(start_date))
+                                             start_ts__lt=datetime.fromtimestamp(int(end_date)),
+                                             end_ts__gt=datetime.fromtimestamp(int(start_date)))
         if existing_slots and exempted_slot_ids:
             existing_slots = existing_slots.filter(id__not__in=exempted_slot_ids)
         if existing_slots:
@@ -108,8 +125,9 @@ class CalendarService:
         :param start: Start time Epoch value, will be coming from the request
         """
         try:
-            if not datetime.fromtimestamp(int(start)) <= datetime.now()+timedelta(minutes=15):
+            if datetime.fromtimestamp(int(start)) <= datetime.now()+timedelta(minutes=15):
                 return "Slot start time must be 15 minutes from current timestamp"
+
         except ValueError:
             return "Invalid Start Date"
         return None
@@ -123,7 +141,7 @@ class CalendarService:
         try:
             if not datetime.fromtimestamp(int(start)) < datetime.fromtimestamp(int(end)):
                 return "Slot start time must be less than end time"
-            elif not datetime.now()+timedelta(minutes=60) == datetime.fromtimestamp(int(start)):
+            elif not datetime.fromtimestamp(int(start))+timedelta(minutes=60) == datetime.fromtimestamp(int(end)):
                 return "Slot must be of 1 hour."
         except ValueError:
             return "Invalid End Date."
@@ -140,8 +158,6 @@ class CalendarService:
         if exempted_slot:
             if exempted_slot[0].booked_by:
                 master_error.append("Changes not allowed")
-            else:
-                user = exempted_slot[0].user
 
         if not master_error:
             for field in data:
@@ -161,13 +177,15 @@ class CalendarService:
                         master_error.append(error)
 
                 if field == "bookedBy":
-                    error = CalendarService.validate_user(data.get("bookedBy"))
+                    error = CalendarService.validate_booked_by(data.get("bookedBy"), exempted_slot)
                     if error:
                         master_error.append(error)
 
-        if not master_error and ("endTimestamp" in data or "startTimestamp"):
+        if not master_error and ("endTimestamp" in data or "startTimestamp" in data):
             user = exempted_slot[0].user if exempted_slot else UserService.get_users(
                 emails=[data.get("userEmail")], data_objects=True, paginate=False).first()
+            if exempted_slot and current_user.email != user.email:
+                master_error.append("Details can be updated only by the user of the slot.")
             if not CalendarService.validate_conflict_for_slot(data.get("startTimestamp"), data.get("endTimestamp"),
                                                               user, [str(slot.id) for slot in exempted_slot]):
                 master_error.append("Conflicting Slot Found.")
@@ -179,7 +197,7 @@ class CalendarService:
     @staticmethod
     def validate_remove_slot(slot):
         """Validate if a slot can be removed"""
-        if not slot.booked_by:
+        if slot.booked_by:
             return {'value': False, 'error': 'Slot is booked'}
         return {'value': True, 'error': None}
 
