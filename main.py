@@ -11,6 +11,7 @@ from services.auth import AuthService
 from utils import ObjectIDConverter, run, ist_tmz_formatter
 from controllers.calendar import calendar_blueprint
 from controllers.auth import auth_blueprint
+from controllers.user import user_blueprint
 
 init_logging()
 application = Flask(__name__)
@@ -30,6 +31,7 @@ login_manager.login_view = "auth_blueprint.login"
 
 application.register_blueprint(calendar_blueprint)
 application.register_blueprint(auth_blueprint)
+application.register_blueprint(user_blueprint)
 
 
 @login_manager.unauthorized_handler
