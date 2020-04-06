@@ -1,6 +1,7 @@
 from flask_login import login_user, logout_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from models.user import User, SessionUser
+from services.user import UserService
 
 
 class AuthService:
@@ -13,14 +14,9 @@ class AuthService:
         return False
 
     @staticmethod
-    def get_user_by_email(email):
-        """Return the user instance for given email"""
-        return User.objects.filter(email=email).first()
-
-    @staticmethod
     def get_session_user_by_email(email):
         """Returns the session user instance for given user email"""
-        user = User.objects.filter(email=email).first()
+        user = UserService.get_users(emails=[email], paginate=False, data_objects=True).first()
         if user:
             return SessionUser(email=user.email, name=user.name)
         return None
@@ -53,7 +49,7 @@ class AuthService:
     def login(email, password, remember):
         """ Log in a user into the application and returns a session user object."""
         # check if user actually exists
-        user = AuthService.get_user_by_email(email)
+        user = UserService.get_users(emails=[email], paginate=False, data_objects=True).first()
         # take the user supplied password, hash it, and compare it to the hashed password in database
         if not user or not check_password_hash(user.password, password):
             return {'value': False,
