@@ -12,28 +12,20 @@ Calendar Service
 #### 1. User:
 + (Name, email, hashedPassword)
 #### 2. Slot:
-+ (user, startTime, endTime)
-
-####3. Booking: 
-+ (slot,bookedBy)
++ (user, startTime, endTime, bookedBy)
 
 ### APIs:
 1. USER
 + `/user/register (POST): userName`
 + `/user/logout (GET): `
 + `/user/login (POST): `
-+ `/user (GET): Gets a user’s details by id`
++ `/user (GET): Gets a user’s details by id or emails`
 
 2. SLOTS
 + `/slot: (POST): auto-authenticated. Allows a user to create a slot.`
 + `/slot: (GET): get info by slot id or by user`
 + `/slot (PUT): Edit a slot (change startTime & endTime subject to constraints)`
 + `/slot (DELETE): delete a slot subject to constraints`
-
-3. BOOKING
-+ `/booking (GET): Gets bookings by user / bookedBy`
-+ `/booking (POST): Create a booking`
-+ `/booking (DELETE): Delete a booking.` 
 
 
 ###Questions:
@@ -42,7 +34,4 @@ eg. if there is any booking related to that slot, so we need to check for all th
 - Assumption: No it can not be changed
 
 2. Can a slot be cancelled/deleted?
-- Assumption: It can be changed only when there is not any booking related to that slot. For editing a slot, first the related booking will have to be deleted.
-
-3. Can a booking be cancelled/deleted?
-- Assumption: Yes, it can be cancelled, but only before the start time of the slot i.e. startTime > currentTime
+- Assumption: It can be changed only when there is not any booked_by user, linked to that slot.

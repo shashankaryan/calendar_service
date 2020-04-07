@@ -29,7 +29,7 @@ def register():
             or not AuthService.validate_email(email):
         return ResponseDto(status=-1, msg='Data Incomplete/Invalid or Password Mismatch').to_json()
 
-    response = AuthService.create_user(email=email, name=name, password=password)
+    response = AuthService.register_user(email=email, name=name, password=password)
     if not response['value']:
         return ResponseDto(status=-1, msg=response['error']).to_json()
     return ResponseDto(status=0, msg=response['msg'], result=response['data']).to_json()
