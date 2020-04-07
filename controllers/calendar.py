@@ -1,5 +1,5 @@
 from bson import ObjectId
-from flask import Blueprint, request, current_app
+from flask import Blueprint, request
 from flask_login import login_required
 
 from dto.result import ResponseDto

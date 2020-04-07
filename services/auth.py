@@ -1,5 +1,5 @@
 from flask_login import login_user, logout_user
-from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.security import check_password_hash
 from models.user import User, SessionUser
 from services.user import UserService
 
@@ -30,16 +30,15 @@ class AuthService:
         return False
 
     @staticmethod
-    def create_user(email, name, password):
-        """ This method creates a user for the SignUp process."""
+    def register_user(email, name, password):
+        """ This method registers a user for the SignUp process."""
         # Checking if the user is already present in the database
         # if a user is found, we an error message will raise saying user is already present with this email.
         if AuthService.if_exists(email):
             return {'value': False,
                     'error': 'User is already present with this email. Please try with another email or login'}
 
-        # create new user with the form data. Hash the password so plaintext version isn't saved.
-        new_user = User(email=email, name=name, password=generate_password_hash(password, method='sha256')).save()
+        new_user = UserService.create_user(email, name, password)
 
         if AuthService.login_user_wrapper(email, True):
             return {'value': True, 'data': new_user.to_dict(), 'msg': 'User created successfully'}

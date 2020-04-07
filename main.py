@@ -24,6 +24,14 @@ for i in application.config:
     os.environ[i] = str(application.config[i])
 db = MongoEngine(application)
 
+# Checking if TESTING is True.
+try:
+    if os.environ['TESTING']:
+        print("Testing mode is ON")
+        application.config.from_pyfile('config/test.cfg')
+except KeyError:
+    pass
+
 # login user
 login_manager = LoginManager()
 login_manager.init_app(application)

@@ -1,6 +1,7 @@
 from bson import ObjectId
 from mongoengine import Q
 from mongoengine.queryset.visitor import QCombination
+from werkzeug.security import generate_password_hash
 from models.user import User
 
 
@@ -53,3 +54,9 @@ class UserService:
         if not user:
             return {"err": 'No User exists.'}
         return {"err": None, "instance": user}
+
+    @staticmethod
+    def create_user(email, name, password):
+        """ This method creates a user."""
+        # create new user with the form data. Hash the password so plaintext version isn't saved.
+        return User(email=email, name=name, password=generate_password_hash(password, method='sha256')).save()
