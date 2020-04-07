@@ -15,7 +15,7 @@ from controllers.user import user_blueprint
 
 init_logging()
 application = Flask(__name__)
-application.config.from_envvar('CONFIG_PATH', silent=True)
+application.config.from_pyfile('config/dev.cfg', silent=True)
 application.url_map.strict_slashes = False
 application.url_map.converters['objectid'] = ObjectIDConverter
 application.jinja_env.filters['ist_tmz_formatter'] = ist_tmz_formatter
@@ -23,14 +23,6 @@ application.jinja_env.filters['ist_tmz_formatter'] = ist_tmz_formatter
 for i in application.config:
     os.environ[i] = str(application.config[i])
 db = MongoEngine(application)
-
-# Checking if TESTING is True.
-try:
-    if os.environ['TESTING']:
-        print("Testing mode is ON")
-        application.config.from_pyfile('config/test.cfg')
-except KeyError:
-    pass
 
 # login user
 login_manager = LoginManager()
